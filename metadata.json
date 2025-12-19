@@ -1,0 +1,7 @@
+{
+  "name": "12xcopyFacetStudio",
+  "description": "Your ethical, empathetic, and personalized AI makeup coach providing real-time educational guidance.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
