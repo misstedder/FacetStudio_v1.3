@@ -6,6 +6,7 @@ import { Button } from '../components/Button';
 import { RefreshCw, Info, Download, Sparkles, Wand2, Edit2, ChevronDown, User, Palette, Droplet, Eye, Play, X, Check, MessageCircle, EyeOff, Search, ExternalLink, Globe } from 'lucide-react';
 import { generateMakeupFaceChart, researchMakeupTrends, WebResearchResult } from '../services/geminiService';
 import { deriveColorHarmony } from '../utils/colorHarmony';
+import { useToast } from '../components/feedback/ToastProvider';
 
 interface GuideViewProps {
   analysis: AnalysisResult | null;
@@ -17,6 +18,7 @@ interface GuideViewProps {
 }
 
 export const GuideView: React.FC<GuideViewProps> = ({ analysis, record, isLoading, onRetry, onUpdateRecord, onAskCoach }) => {
+  const { showToast } = useToast();
   const contentRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isGeneratingChart, setIsGeneratingChart] = useState(false);
@@ -61,7 +63,7 @@ export const GuideView: React.FC<GuideViewProps> = ({ analysis, record, isLoadin
       link.click();
     } catch (error) {
       console.error("Export failed", error);
-      alert("Could not export image.");
+      showToast("Could not export image.", 'error');
     } finally {
       setIsExporting(false);
     }
@@ -78,8 +80,9 @@ export const GuideView: React.FC<GuideViewProps> = ({ analysis, record, isLoadin
       );
       const updatedRecord = { ...record, visualGuideSrc: chartBase64 };
       onUpdateRecord(updatedRecord);
+      showToast('Visual guide generated!', 'success');
     } catch (error) {
-      alert("Could not generate visual guide right now.");
+      showToast("Could not generate visual guide right now.", 'error');
     } finally {
       setIsGeneratingChart(false);
     }

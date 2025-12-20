@@ -1,0 +1,153 @@
+{
+    "provider": {
+        "hosting": "Hostinger VPS",
+        "os": "Ubuntu 24.04 LTS",
+        "vps_hostname": "srv1202178.hstgr.cloud",
+        "public_ipv4": "89.116.157.33",
+        "virtualization": "KVM 2"
+    },
+    "networking": {
+        "firewall": {
+            "tool": "ufw",
+            "status": "active",
+            "default_policy": {
+                "incoming": "deny",
+                "outgoing": "allow"
+            },
+            "rules": {
+                "22/tcp": "allow",
+                "80/tcp": "allow",
+                "443/tcp": "allow",
+                "8090/tcp": "deny"
+            }
+        },
+        "dns": {
+            "provider": "Hostinger DNS",
+            "domain": "di3s.cloud",
+            "subdomains": {
+                "api.di3s.cloud": "89.116.157.33"
+            },
+            "nameservers": [
+                "ns1.dns-parking.com",
+                "ns2.dns-parking.com"
+            ]
+        }
+    },
+    "reverse_proxy": {
+        "software": "nginx",
+        "ports": {
+            "public": [
+                80,
+                443
+            ],
+            "private_upstream": 8090
+        },
+        "ssl": {
+            "provider": "Let's Encrypt",
+            "tool": "certbot",
+            "certificates": [
+                "api.di3s.cloud"
+            ],
+            "termination": "nginx"
+        },
+        "upstream": {
+            "service": "PocketBase",
+            "bind_address": "127.0.0.1",
+            "bind_port": 8090
+        }
+    },
+    "pocketbase": {
+        "version": "v0.24.4",
+        "install_method": "Hostinger one-click + manual hardening",
+        "process_manager": "systemd",
+        "service_user": "root",
+        "admin_ui": {
+            "url": "https://api.di3s.cloud/_/",
+            "exposed_via": "nginx",
+            "direct_port_access": false
+        },
+        "api_base_url": "https://api.di3s.cloud",
+        "direct_port_access": {
+            "enabled": false,
+            "reason": "localhost bind + firewall deny"
+        }
+    },
+    "authentication": {
+        "users_collection": "users",
+        "auth_method": "email + password",
+        "service_account": {
+            "type": "standard user (non-admin)",
+            "purpose": "backend / AI integrations",
+            "auth_endpoint": "/api/collections/users/auth-with-password"
+        }
+    },
+    "collections": {
+        "ai_requests": {
+            "type": "base",
+            "fields": {
+                "Prompt": "text",
+                "Model": "text",
+                "User": {
+                    "type": "relation",
+                    "collection": "users",
+                    "multiple": false
+                }
+            },
+            "api_rules": {
+                "create": "@request.auth.id != \"\" && User = @request.auth.id",
+                "read": "@request.auth.id != \"\" && User = @request.auth.id",
+                "update": "id = \"\"",
+                "delete": "id = \"\""
+            }
+        },
+        "ai_responses": {
+            "type": "base",
+            "fields": {
+                "Response": "text",
+                "Tokens": "number",
+                "Request": {
+                    "type": "relation",
+                    "collection": "ai_requests",
+                    "multiple": false
+                },
+                "User": {
+                    "type": "relation",
+                    "collection": "users",
+                    "multiple": false
+                }
+            },
+            "api_rules": {
+                "create": "@request.auth.id != \"\" && User = @request.auth.id",
+                "read": "@request.auth.id != \"\" && User = @request.auth.id",
+                "update": "id = \"\"",
+                "delete": "id = \"\""
+            }
+        }
+    },
+    "access_patterns": {
+        "external_clients": {
+            "protocol": "HTTPS",
+            "entrypoint": "nginx :443",
+            "auth": "PocketBase token (Bearer)",
+            "notes": "No direct access to PocketBase port"
+        },
+        "internal_services": {
+            "protocol": "HTTP",
+            "address": "127.0.0.1:8090",
+            "restricted_to": "local processes only"
+        }
+    },
+    "security_posture": {
+        "public_attack_surface": [
+            "nginx :443",
+            "nginx :80 (redirect)"
+        ],
+        "private_services": [
+            "PocketBase :8090"
+        ],
+        "admin_access": [
+            "PocketBase admin UI via HTTPS",
+            "SSH (port 22)"
+        ]
+    }
+}

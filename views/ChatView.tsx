@@ -77,7 +77,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ analysis, initialQuery, onCl
   };
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white animate-fade-in">
       <div className="bg-white border-b border-aura-100 p-4 pt-8 text-center sticky top-0 z-10">
         <h2 className="text-lg font-semibold text-aura-900">Coach Chat</h2>
         <p className="text-xs text-aura-500">Ask about techniques, tools, or color theory.</p>

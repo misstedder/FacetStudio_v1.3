@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ViewState, AnalysisResult, AnalysisRecord } from './types';
 import { NavBar } from './components/NavBar';
 import { CameraView } from './components/CameraView';
@@ -8,29 +8,41 @@ import { ChatView } from './views/ChatView';
 import { GalleryView } from './views/GalleryView';
 import { analyzeFace } from './services/geminiService';
 import { saveAnalysis, updateRecord } from './services/storage';
+import { isAuthenticated } from './services/auth';
+import { AuthContainer } from './components/auth/AuthContainer';
+import { ErrorBoundary } from './components/feedback/ErrorBoundary';
+import { ToastProvider, useToast } from './components/feedback/ToastProvider';
+import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
 
-const App: React.FC = () => {
+const MainApp: React.FC = () => {
+  const { showToast } = useToast();
   const [view, setView] = useState<ViewState>(ViewState.DASHBOARD);
-  // We track the currently "active" analysis record for the Guide/Chat views
   const [activeRecord, setActiveRecord] = useState<AnalysisRecord | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [initialChatQuery, setInitialChatQuery] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Check onboarding on mount
+  useEffect(() => {
+    const completed = localStorage.getItem('facetStudioOnboardingComplete');
+    if (!completed) {
+      setShowOnboarding(true);
+    }
+  }, []);
 
   const handleCapture = async (imageSrc: string) => {
     setIsAnalyzing(true);
-    setView(ViewState.GUIDE); 
-    
+    setView(ViewState.GUIDE);
+
     try {
       const result = await analyzeFace(imageSrc);
-      
-      // Save to history immediately
       const newRecord = await saveAnalysis(imageSrc, result);
       setActiveRecord(newRecord);
-      
       setView(ViewState.GUIDE);
+      showToast('Analysis complete!', 'success');
     } catch (error) {
-      console.error("Analysis Error:", error);
-      alert("We couldn't analyze the image. Please try again with better lighting.");
+      console.error('Analysis Error:', error);
+      showToast("We couldn't analyze the image. Please try again with better lighting.", 'error');
       setView(ViewState.DASHBOARD);
     } finally {
       setIsAnalyzing(false);
@@ -45,6 +57,7 @@ const App: React.FC = () => {
   const handleUpdateRecord = async (updatedRecord: AnalysisRecord) => {
     await updateRecord(updatedRecord);
     setActiveRecord(updatedRecord);
+    showToast('Profile updated', 'success');
   };
 
   const handleAskCoach = (query: string) => {
@@ -55,63 +68,83 @@ const App: React.FC = () => {
   const renderContent = () => {
     if (view === ViewState.CAMERA) {
       return (
-        <CameraView 
-          onCapture={handleCapture} 
-          onCancel={() => setView(ViewState.DASHBOARD)} 
-        />
+        <div className="animate-fade-in">
+          <CameraView
+            onCapture={handleCapture}
+            onCancel={() => setView(ViewState.DASHBOARD)}
+          />
+        </div>
       );
     }
 
-    // Main layout with padding for navbar
     return (
       <div className="min-h-screen pb-24 max-w-md mx-auto bg-aura-50 shadow-2xl relative overflow-hidden">
-        {view === ViewState.DASHBOARD && (
-          <DashboardView 
-            onStartAnalysis={() => setView(ViewState.CAMERA)} 
-            hasAnalysis={!!activeRecord}
-            onViewResults={() => setView(ViewState.GUIDE)}
-          />
-        )}
+        <div className="animate-fade-in">
+          {view === ViewState.DASHBOARD && (
+            <DashboardView
+              onStartAnalysis={() => setView(ViewState.CAMERA)}
+              hasAnalysis={!!activeRecord}
+              onViewResults={() => setView(ViewState.GUIDE)}
+            />
+          )}
 
-        {view === ViewState.GALLERY && (
-          <GalleryView 
-             onSelectRecord={handleSelectRecord}
-             onNewAnalysis={() => setView(ViewState.CAMERA)}
-          />
-        )}
-        
-        {view === ViewState.GUIDE && (
-          <GuideView 
-            analysis={activeRecord?.result || null}
-            record={activeRecord}
-            isLoading={isAnalyzing}
-            onRetry={() => setView(ViewState.CAMERA)}
-            onUpdateRecord={handleUpdateRecord}
-            onAskCoach={handleAskCoach}
-          />
-        )}
-        
-        {view === ViewState.CHAT && activeRecord && (
-          <ChatView 
-            analysis={activeRecord.result} 
-            initialQuery={initialChatQuery}
-            onClearInitialQuery={() => setInitialChatQuery(null)}
-          />
-        )}
-        
-        <NavBar 
-          currentView={view} 
-          setView={setView} 
-          hasAnalysis={!!activeRecord} 
-        />
+          {view === ViewState.GALLERY && (
+            <GalleryView
+              onSelectRecord={handleSelectRecord}
+              onNewAnalysis={() => setView(ViewState.CAMERA)}
+            />
+          )}
+
+          {view === ViewState.GUIDE && (
+            <GuideView
+              analysis={activeRecord?.result || null}
+              record={activeRecord}
+              isLoading={isAnalyzing}
+              onRetry={() => setView(ViewState.CAMERA)}
+              onUpdateRecord={handleUpdateRecord}
+              onAskCoach={handleAskCoach}
+            />
+          )}
+
+          {view === ViewState.CHAT && activeRecord && (
+            <ChatView
+              analysis={activeRecord.result}
+              initialQuery={initialChatQuery}
+              onClearInitialQuery={() => setInitialChatQuery(null)}
+            />
+          )}
+        </div>
+
+        <NavBar currentView={view} setView={setView} hasAnalysis={!!activeRecord} />
       </div>
     );
   };
 
   return (
     <>
+      {showOnboarding && <OnboardingFlow onComplete={() => setShowOnboarding(false)} />}
       {renderContent()}
     </>
+  );
+};
+
+const App: React.FC = () => {
+  const [authenticated, setAuthenticated] = useState(isAuthenticated());
+
+  // Poll auth state every second (PocketBase updates authStore automatically)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAuthenticated(isAuthenticated());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <ErrorBoundary>
+      <ToastProvider>
+        {authenticated ? <MainApp /> : <AuthContainer />}
+      </ToastProvider>
+    </ErrorBoundary>
   );
 };
 

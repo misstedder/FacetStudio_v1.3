@@ -1,0 +1,70 @@
+1. Executive Summary
+The goal is to build a high-end, AI-driven digital sanctuary for facial architectural analysis and professional makeup application. The product moves beyond simple "filters" into Biometric Stylization. It treats the user’s face as a data-rich canvas to provide bespoke, mathematically-backed technique guidance (e.g., bone structure mapping, symmetry analysis, and color theory).
+
+2. The Technical Core (Current Stack)
+The following infrastructure is already live and hardened. All future development must integrate with this environment:
+
+Host: Hostinger VPS (Ubuntu 24.04 LTS).
+
+DNS/SSL: api.di3s.cloud (Let’s Encrypt via Certbot).
+
+Reverse Proxy: Nginx (Proxying port 80/443 to internal 8090).
+
+Backend: PocketBase v0.24.4.
+
+Firewall: UFW active (Port 8090 blocked externally; only accessible via Nginx).
+
+3. The "Architectural" Schema
+We are discarding "whimsical" tropes for a "Professional Atelier" approach. The backend must support the following data-rich collections:
+
+JavaScript
+
+// Migration Script for Facial Vectors
+migrate((db) => {
+  const dao = new Dao(db);
+
+  const facialGeometry = new Collection({
+    "name": "facial_geometry",
+    "type": "base",
+    "schema": [
+      { "name": "user", "type": "relation", "required": true, "options": { "collectionId": "_pb_users_auth_", "maxSelect": 1 } },
+      { "name": "mesh_data", "type": "json", "required": true }, // 468+ landmark coordinates
+      { "name": "proportions", "type": "json" }, // Calculated ratios
+      { "name": "symmetry_score", "type": "number" },
+      { "name": "is_active", "type": "bool", "options": { "default": true } }
+    ],
+    "listRule": "@request.auth.id = user.id",
+    "viewRule": "@request.auth.id = user.id",
+  });
+
+  const aestheticVectors = new Collection({
+    "name": "aesthetic_vectors",
+    "type": "base",
+    "schema": [
+      { "name": "geometry_ref", "type": "relation", "required": true, "options": { "collectionId": facialGeometry.id, "maxSelect": 1 } },
+      { "name": "skin_tone_hex", "type": "text" },
+      { "name": "undertone", "type": "select", "options": { "values": ["cool", "warm", "neutral", "olive"] } },
+      { "name": "canvas_type", "type": "select", "options": { "values": ["dry", "oily", "combination", "sensitive", "mature"] } }
+    ],
+    "listRule": "@request.auth.id = geometry_ref.user.id",
+  });
+
+  dao.saveCollection(facialGeometry);
+  dao.saveCollection(aestheticVectors);
+});
+4. Strategic Vision & Tone
+The Vibe: "Sephora Pro" meets "Private Atelier." Mature, sophisticated, empowering.
+
+The Mission: To teach the user something new about their own architecture.
+
+Auth Philosophy: "The Private Club." Delightfully secure, privacy-first, friction-free (Magic Links).
+
+Value Prop: "Based on your 34° jawline angle and neutral-olive undertone, this application of cream contour will lift your structure by simulating a higher zygomatic arch."
+
+5. Critical Behavioral Directive
+When interacting with the user, adhere to the following principle:
+
+Treat my verbosity, metaphors, and tonal exploration as signal-rich but non-binding; prioritize inferring and serving my underlying intent, even if that requires discarding surface expression or recommending a reset.
+
+Final Orchestrator Note
+This packet is ready. When you initialize the next session with this data, the new AI node will recognize that while the feeling of the app is "girly" (in the sense of a youthful, feminine sanctuary), the execution must be Elite, Professional, and Biometrically Precise.

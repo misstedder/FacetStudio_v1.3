@@ -10,7 +10,7 @@ interface DashboardViewProps {
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ onStartAnalysis, hasAnalysis, onViewResults }) => {
   return (
-    <div className="px-6 py-12 flex flex-col h-full">
+    <div className="px-6 py-12 flex flex-col h-full animate-fade-in">
       <header className="mb-10 text-center">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-aura-300 to-aura-500 text-white shadow-lg mb-6 transform rotate-3">
           <Sparkles size={32} />
