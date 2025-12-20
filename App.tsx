@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { ViewState, AnalysisResult, AnalysisRecord } from './types';
 import { NavBar } from './components/NavBar';
 import { CameraView } from './components/CameraView';
+import { ImageSourceSelector } from './components/ImageSourceSelector';
 import { DashboardView } from './views/DashboardView';
 import { GuideView } from './views/GuideView';
 import { ChatView } from './views/ChatView';
 import { GalleryView } from './views/GalleryView';
+import { StyleBoardView } from './views/StyleBoardView';
+import { AddLookForm } from './components/AddLookForm';
 import { analyzeFace } from './services/geminiService';
 import { saveAnalysis, updateRecord } from './services/storage';
 import { isAuthenticated } from './services/auth';
@@ -21,6 +24,7 @@ const MainApp: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [initialChatQuery, setInitialChatQuery] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showAddLook, setShowAddLook] = useState(false);
 
   // Check onboarding on mount
   useEffect(() => {
@@ -66,6 +70,20 @@ const MainApp: React.FC = () => {
   };
 
   const renderContent = () => {
+    // Image Source Selector
+    if (view === ViewState.IMAGE_SOURCE) {
+      return (
+        <div className="animate-fade-in">
+          <ImageSourceSelector
+            onCamera={() => setView(ViewState.CAMERA)}
+            onUpload={handleCapture}
+            onCancel={() => setView(ViewState.DASHBOARD)}
+          />
+        </div>
+      );
+    }
+
+    // Camera View
     if (view === ViewState.CAMERA) {
       return (
         <div className="animate-fade-in">
@@ -82,7 +100,7 @@ const MainApp: React.FC = () => {
         <div className="animate-fade-in">
           {view === ViewState.DASHBOARD && (
             <DashboardView
-              onStartAnalysis={() => setView(ViewState.CAMERA)}
+              onStartAnalysis={() => setView(ViewState.IMAGE_SOURCE)}
               hasAnalysis={!!activeRecord}
               onViewResults={() => setView(ViewState.GUIDE)}
             />
@@ -91,7 +109,7 @@ const MainApp: React.FC = () => {
           {view === ViewState.GALLERY && (
             <GalleryView
               onSelectRecord={handleSelectRecord}
-              onNewAnalysis={() => setView(ViewState.CAMERA)}
+              onNewAnalysis={() => setView(ViewState.IMAGE_SOURCE)}
             />
           )}
 
@@ -100,7 +118,7 @@ const MainApp: React.FC = () => {
               analysis={activeRecord?.result || null}
               record={activeRecord}
               isLoading={isAnalyzing}
-              onRetry={() => setView(ViewState.CAMERA)}
+              onRetry={() => setView(ViewState.IMAGE_SOURCE)}
               onUpdateRecord={handleUpdateRecord}
               onAskCoach={handleAskCoach}
             />
@@ -113,6 +131,10 @@ const MainApp: React.FC = () => {
               onClearInitialQuery={() => setInitialChatQuery(null)}
             />
           )}
+
+          {view === ViewState.STYLE_BOARD && (
+            <StyleBoardView onAddLook={() => setShowAddLook(true)} />
+          )}
         </div>
 
         <NavBar currentView={view} setView={setView} hasAnalysis={!!activeRecord} />
@@ -123,18 +145,30 @@ const MainApp: React.FC = () => {
   return (
     <>
       {showOnboarding && <OnboardingFlow onComplete={() => setShowOnboarding(false)} />}
+      {showAddLook && (
+        <AddLookForm
+          onClose={() => setShowAddLook(false)}
+          onSuccess={() => {
+            setShowAddLook(false);
+            setView(ViewState.STYLE_BOARD);
+          }}
+        />
+      )}
       {renderContent()}
     </>
   );
 };
 
 const App: React.FC = () => {
-  const [authenticated, setAuthenticated] = useState(isAuthenticated());
+  const [authenticated, setAuthenticated] = useState(
+    isAuthenticated() || localStorage.getItem('demoMode') === 'true'
+  );
 
   // Poll auth state every second (PocketBase updates authStore automatically)
   useEffect(() => {
     const interval = setInterval(() => {
-      setAuthenticated(isAuthenticated());
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      setAuthenticated(isAuthenticated() || isDemoMode);
     }, 1000);
     return () => clearInterval(interval);
   }, []);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, BookOpen, MessageCircle, Home, Image as ImageIcon } from 'lucide-react';
+import { Heart, BookOpen, MessageCircle, Home, Image as ImageIcon } from 'lucide-react';
 import { ViewState } from '../types';
 
 interface NavBarProps {
@@ -12,8 +12,8 @@ export const NavBar: React.FC<NavBarProps> = ({ currentView, setView, hasAnalysi
   const navItems = [
     { id: ViewState.DASHBOARD, icon: Home, label: 'Home' },
     { id: ViewState.GALLERY, icon: ImageIcon, label: 'Gallery' },
-    { id: ViewState.CAMERA, icon: Camera, label: 'Analyze' },
-    { id: ViewState.GUIDE, icon: BookOpen, label: 'My Profile', disabled: !hasAnalysis },
+    { id: ViewState.STYLE_BOARD, icon: Heart, label: 'Looks' },
+    { id: ViewState.GUIDE, icon: BookOpen, label: 'Profile', disabled: !hasAnalysis },
     { id: ViewState.CHAT, icon: MessageCircle, label: 'Coach', disabled: !hasAnalysis },
   ];
 

@@ -1,10 +1,12 @@
 
 export enum ViewState {
   DASHBOARD = 'DASHBOARD',
+  IMAGE_SOURCE = 'IMAGE_SOURCE',
   CAMERA = 'CAMERA',
   GUIDE = 'GUIDE',
   CHAT = 'CHAT',
-  GALLERY = 'GALLERY'
+  GALLERY = 'GALLERY',
+  STYLE_BOARD = 'STYLE_BOARD'
 }
 
 export enum FaceShape {
@@ -141,4 +143,22 @@ export interface AIResponse {
   Request: string; // Relation to ai_requests
   User: string; // Relation to users collection
   created?: string;
+}
+
+/**
+ * saved_looks collection
+ * Users can save makeup looks, daily styles, and inspiration
+ */
+export interface SavedLook {
+  id?: string;
+  user: string; // Relation to users collection
+  title: string; // e.g., "Date Night Look", "Natural Everyday"
+  description?: string; // Notes about the look
+  image_src?: string; // Base64 or URL of the photo
+  tags?: string[]; // e.g., ["glam", "evening", "red-lips"]
+  occasion?: string; // e.g., "work", "date", "party", "everyday"
+  products_used?: string; // Text list of products
+  is_favorite?: boolean;
+  created?: string;
+  updated?: string;
 }

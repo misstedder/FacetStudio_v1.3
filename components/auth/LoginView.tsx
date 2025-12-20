@@ -115,6 +115,23 @@ export const LoginView: React.FC<LoginViewProps> = ({ onSwitch }) => {
         </Button>
       </form>
 
+      {/* Demo Mode - Temporary */}
+      <div className="mt-4">
+        <button
+          type="button"
+          onClick={() => {
+            localStorage.setItem('demoMode', 'true');
+            window.location.reload();
+          }}
+          className="w-full py-3 px-4 bg-gradient-to-r from-aura-400 to-aura-600 text-white rounded-xl hover:from-aura-500 hover:to-aura-700 transition-all font-medium shadow-lg hover:shadow-xl"
+        >
+          🎨 Enter Demo Mode
+        </button>
+        <p className="text-xs text-center text-gray-500 mt-2">
+          Preview the app without authentication
+        </p>
+      </div>
+
       {/* Magic Link Option */}
       <div className="mt-4 text-center">
         <button
